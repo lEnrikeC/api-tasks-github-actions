@@ -1,0 +1,24 @@
+name: Pull Request - Verificación
+on:
+    pull_request:
+        branches: ["main"]
+env:
+    DOTNET_VERSION: '10.0.103'
+    BUILD_CONFIGURATION: 'Release'
+jobs:
+    build:
+      name: "Job Pull Request - Verificación"
+      runs-on: ubuntu-latest
+
+      steps:
+       - name: Checkout repository
+         uses: actions/checkout@v4
+       - name: Setup .NET
+         uses: actions/setup-dotnet@v4
+         with:
+           dotnet-version: ${{ env.DOTNET_VERSION }}
+       - name: build with dotnet
+         run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }}
+
+       - name: test
+         run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} 
