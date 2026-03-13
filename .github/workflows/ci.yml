@@ -1,89 +1,45 @@
-name: Continuos Integration
+name: Continuous Integration
 on:
-    push:
-        branches: ["main"]
-
+  push:
+    branches: ["main"]
 permissions:
-    id-token: write
-    contents: read       
+  id-token: write
+  contents: read
 env:
-    DOTNET_VERSION: '10.0.103'
-    BUILD_CONFIGURATION: 'Release'
+  DOTNET_VERSION: '10.0.103'
+  BUILD_CONFIGURATION: 'Release'
 jobs:
     build:
       name: "CI"
       runs-on: ubuntu-latest
-
       steps:
-       - name: Checkout repository
-         uses: actions/checkout@v4
-       - name: Setup .NET
-         uses: actions/setup-dotnet@v4
-         with:
-           dotnet-version: ${{ env.DOTNET_VERSION }}
-     
-       - name: test
-         run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} 
-
-       - name: Dotnet Publish
-         run: dotnet publish src/TaskApi/TaskApi.csproj --configuration ${{ env.BUILD_CONFIGURATION }} -o artifacts
-
-       - name: Upload artifact
-         uses: actions/upload-artifact@v4
-         with:
-           name: uv-artifacts
-           path: artifacts/  
-          
+        - name: Checkout Repository
+          uses: actions/checkout@v4
+        - name: Set up .NET 
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: ${{env.DOTNET_VERSION}}        
+        
+        - name: Test
+          run: dotnet test --configuration ${{env.BUILD_CONFIGURATION}}
+        - name: Dotnet Publish
+          run: dotnet publish src/TaskApi/TaskApi.csproj --configuration ${{env.BUILD_CONFIGURATION}} -o artifacts
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: uv-artifact
+            path: artifacts/
     deploy_dev:
-      name: "Deploy to Dev"
-      runs-on: ubuntu-latest
+      name: Deploy Dev      
       needs: build
-      environment: dev
-      
-      steps:
-        - name: Download artifact
-          uses: actions/download-artifact@v4
-          with:
-            name: uv-artifacts       
-            path: artifacts/
-         
-        - name: Azure Login
-          uses: azure/login@v2
-          with:
-            client-id: ${{ secrets.AZURE_CLIENT_ID }}
-            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
- 
-        - name: Deploy to Azure Service
-          uses: azure/webapps-deploy@v2
-          with:
-            app-name: app-api-uv-ec-dev
-            package: artifacts/
-
+      uses: ./.github/workflows/step-deploy.yml
+      with:
+        env: dev
+        secrets: inherit
     deploy_prod:
-      name: "Deploy to Prod"
-      runs-on: ubuntu-latest
+      name: Deploy Prod
       needs: deploy_dev
-      environment: prod
-      
-      steps:
-        - name: Download artifact
-          uses: actions/download-artifact@v4
-          with:
-            name: uv-artifacts       
-            path: artifacts/
-         
-        - name: Azure Login
-          uses: azure/login@v2
-          with:
-            client-id: ${{ secrets.AZURE_CLIENT_ID }}
-            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
- 
-        - name: Deploy to Azure Service
-          uses: azure/webapps-deploy@v2
-          with:
-            app-name: app-api-uv-ec-prod
-            package: artifacts/
-
-
+      uses: ./.github/workflows/step-deploy.yml
+      with:
+        env: prod
+        secrets: inherit
